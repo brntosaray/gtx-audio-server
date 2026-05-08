@@ -6,16 +6,11 @@ app = Flask(__name__)
 AUDIO_DIR = "./audio"
 os.makedirs(AUDIO_DIR, exist_ok=True)
 
-@app.route("/")
-def index():
-    return jsonify({"status": "GTX Audio Server Running", "version": "1.0"})
-
-@app.route("/index.php/api/app/auth")
-def auth():
-    package = request.args.get("package", "")
-    sn = request.args.get("sn", "")
-    mac = request.args.get("mac", "")
-    ver = request.args.get("ver", "")
+def auth_response(req):
+    package = req.args.get("package", "")
+    sn = req.args.get("sn", "")
+    mac = req.args.get("mac", "")
+    ver = req.args.get("ver", "")
     return jsonify({
         "result": 1,
         "msg": "success",
@@ -23,9 +18,24 @@ def auth():
             "status": 1,
             "expire": "2099-12-31",
             "package": package,
-            "sn": sn
+            "sn": sn,
+            "mac": mac
         }
     })
+
+@app.route("/")
+def index():
+    return jsonify({"status": "GTX Audio Server Running", "version": "1.0"})
+
+@app.route("/index.php/api/app/auth", methods=["GET", "POST"])
+@app.route("/api/app/auth", methods=["GET", "POST"])
+@app.route("/api/auth", methods=["GET", "POST"])
+@app.route("/api/v1/auth", methods=["GET", "POST"])
+@app.route("/api/v1/activation", methods=["GET", "POST"])
+@app.route("/activate", methods=["GET", "POST"])
+@app.route("/auth", methods=["GET", "POST"])
+def auth():
+    return auth_response(request)
 
 @app.route("/audio/list")
 def list_audio():
