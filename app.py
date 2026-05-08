@@ -1,17 +1,18 @@
-from flask import Flask, jsonify, send_file, request
+from flask import Flask, jsonify, send_file, request, Response
 import os
+import json
 
 app = Flask(__name__)
 
 AUDIO_DIR = "./audio"
 os.makedirs(AUDIO_DIR, exist_ok=True)
 
-def auth_response(req):
+def auth_payload(req):
     package = req.args.get("package", "")
     sn = req.args.get("sn", "")
     mac = req.args.get("mac", "")
     ver = req.args.get("ver", "")
-    return jsonify({
+    return {
         "result": 1,
         "msg": "success",
         "data": {
@@ -19,9 +20,13 @@ def auth_response(req):
             "expire": "2099-12-31",
             "package": package,
             "sn": sn,
-            "mac": mac
+            "mac": mac,
+            "ver": ver
         }
-    })
+    }
+
+def json_ok(req):
+    return Response(json.dumps(auth_payload(req)), mimetype="application/json", status=200)
 
 @app.route("/")
 def index():
@@ -33,9 +38,10 @@ def index():
 @app.route("/api/v1/auth", methods=["GET", "POST"])
 @app.route("/api/v1/activation", methods=["GET", "POST"])
 @app.route("/activate", methods=["GET", "POST"])
+@app.route("/audio/activate", methods=["GET", "POST"])
 @app.route("/auth", methods=["GET", "POST"])
 def auth():
-    return auth_response(request)
+    return json_ok(request)
 
 @app.route("/audio/list")
 def list_audio():
@@ -54,6 +60,10 @@ def serve_audio(filename):
 @app.route("/epg")
 def epg():
     return jsonify({"epg": [], "message": "EPG endpoint ready"})
+
+@app.errorhandler(405)
+def handle_405(e):
+    return json_ok(request)
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
